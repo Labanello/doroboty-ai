@@ -10,7 +10,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { JobCard } from "@/features/jobs/job-card";
 import { ApplicationOfferPreview } from "@/features/jobs/application-offer-preview";
 import { usePrototype } from "./store";
-import { currentPerson, publishedJobs, stageLabels, MIN_APPLICATION_ANSWER_LENGTH } from "./model";
+import {
+  currentPerson,
+  publishedJobs,
+  stageLabels,
+  MIN_APPLICATION_ANSWER_LENGTH,
+  type Proof,
+} from "./model";
+import { proofFields } from "./proof";
+import { ProofSummary } from "./proof-card";
 import { PageTitle, Empty, NotFound, Notice } from "./shell";
 import { CvAttachment } from "./cv-attachment";
 import { MatchScore } from "./match-score";
@@ -239,6 +247,7 @@ export function ApplyPage() {
   const notes = draft?.notes ?? "";
   const generated = draft?.generated ?? "";
   const [answer, setAnswer] = useState(draft?.answer ?? "");
+  const [proof, setProof] = useState<Proof>(draft?.proof ?? { own: "", usage: "", fix: "" });
   const [consent, setConsent] = useState(false);
   const [message, setMessage] = useState("");
   const [attempted, setAttempted] = useState(false);
@@ -281,7 +290,7 @@ export function ApplyPage() {
       document.getElementById("application-consent")?.focus();
       return;
     }
-    if (run({ type: "submit", jobId: job!.id, notes, generated, answer, consent })) {
+    if (run({ type: "submit", jobId: job!.id, notes, generated, answer, proof, consent })) {
       submittedOnce.current = true;
       setSubmitted(true);
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -352,6 +361,33 @@ export function ApplyPage() {
                 : `Minimum ${MIN_APPLICATION_ANSWER_LENGTH} znaków. Obecnie: ${answerLength}.`}
             </p>
           </section>
+          <fieldset
+            className="application-form-section application-proof"
+            aria-describedby="application-proof-help"
+          >
+            <legend>
+              <h3>Co zrobiłem sam / co zrobiłam sama</h3>
+            </legend>
+            <p id="application-proof-help" className="application-help">
+              Opcjonalnie. Opisz jeden projekt z AI. Rekruter zobaczy te odpowiedzi obok Twojej
+              aplikacji – liczby i konkrety pomagają mu zrozumieć, co zrobiłeś sam.
+            </p>
+            {proofFields.map((field) => (
+              <Field key={field.key} label={field.label}>
+                <Textarea
+                  disabled={submitted}
+                  maxLength={2000}
+                  rows={3}
+                  placeholder={field.hint}
+                  value={proof[field.key]}
+                  onChange={(e) => {
+                    setProof({ ...proof, [field.key]: e.target.value });
+                    setConsent(false);
+                  }}
+                />
+              </Field>
+            ))}
+          </fieldset>
           <div className="application-form-section application-submit">
             <label className="application-consent">
               <Checkbox
@@ -387,7 +423,7 @@ export function ApplyPage() {
                 disabled={submitted}
                 variant="outline"
                 onClick={() => {
-                  if (run({ type: "draft", jobId: job.id, notes, generated, answer }))
+                  if (run({ type: "draft", jobId: job.id, notes, generated, answer, proof }))
                     setMessage("Szkic został zapisany.");
                 }}
               >
@@ -452,7 +488,10 @@ export function ApplicationsPage({ employer = false }: { employer?: boolean }) {
                   </p>
                   <p>{stageLabels[a.stage]}</p>
                 </div>
-                <MatchScore score={a.score} />
+                <div className="proof-list-facts">
+                  <MatchScore score={a.score} />
+                  {employer && <ProofSummary proof={a.proof} />}
+                </div>
               </div>
               {employer && <p className="mt-4 text-muted-foreground">{a.summary}</p>}
             </article>

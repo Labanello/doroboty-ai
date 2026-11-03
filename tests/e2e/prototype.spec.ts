@@ -370,7 +370,14 @@ for (const width of [1440, 375]) {
     const form = page.locator("main form");
     const answer = page.getByLabel("Dlaczego pasujesz do tej roli?");
     await expect(answer).toHaveValue(draft.answer);
-    await expect(form.getByRole("textbox")).toHaveCount(1);
+    // The answer plus the three optional "Co zrobiłem sam" card fields; a legacy draft has no card.
+    await expect(form.getByRole("textbox")).toHaveCount(4);
+    for (const label of [
+      "Twoja część pracy (a co zrobiło AI lub zespół)",
+      "Kto z tego korzystał i jak sprawdzono efekt",
+      "Co nie działało i jak to naprawiono",
+    ])
+      await expect(page.getByLabel(label)).toHaveValue("");
     await expect(page.getByLabel("Twoje notatki do aplikacji (opcjonalnie)")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Przygotuj propozycję z AI" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Użyj propozycji" })).toHaveCount(0);
@@ -389,6 +396,14 @@ for (const width of [1440, 375]) {
       ),
     ).toBe(true);
     await answer.focus();
+    for (const label of [
+      "Twoja część pracy (a co zrobiło AI lub zespół)",
+      "Kto z tego korzystał i jak sprawdzono efekt",
+      "Co nie działało i jak to naprawiono",
+    ]) {
+      await page.keyboard.press("Tab");
+      await expect(page.getByLabel(label)).toBeFocused();
+    }
     await page.keyboard.press("Tab");
     await expect(page.getByRole("checkbox")).toBeFocused();
     await page.keyboard.press("Tab");
@@ -397,9 +412,9 @@ for (const width of [1440, 375]) {
     await expect(page.getByRole("button", { name: "Zapisz szkic", exact: true })).toBeFocused();
     const editedAnswer = "Moja poprawiona odpowiedź opisuje doświadczenie potrzebne w tej roli.";
     await answer.fill(editedAnswer);
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
-    await page.keyboard.press("Tab");
+    // Three card fields, consent and send precede the draft action.
+    for (let step = 0; step < 6; step++) await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Zapisz szkic", exact: true })).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("status")).toHaveText("Szkic został zapisany.");
     expect(
@@ -418,7 +433,9 @@ for (const width of [1440, 375]) {
       fullPage: true,
     });
     await answer.focus();
-    await page.keyboard.press("Tab");
+    // Skip the three optional card fields to reach consent.
+    for (let step = 0; step < 4; step++) await page.keyboard.press("Tab");
+    await expect(page.getByRole("checkbox")).toBeFocused();
     await page.keyboard.press("Space");
     await page.keyboard.press("Tab");
     await page.keyboard.press("Enter");
@@ -718,6 +735,8 @@ test("process sheet keeps notes across keyboard tabs and saves stage history wit
     /^\.?\/cv\/marek-nowak-cv-v1\.pdf$/,
   );
   await page.keyboard.press("Home");
+  await expect(page.getByRole("tab", { name: "Karta", exact: true })).toBeFocused();
+  await page.keyboard.press("ArrowRight");
   await expect(answer).toBeFocused();
   await expect(page.getByRole("tabpanel", { name: "Odpowiedź", exact: true })).toContainText(
     "Przesłana aplikacja",
@@ -994,4 +1013,48 @@ test("candidate snapshot supports custom CV and long content at desktop and mobi
   await expect(page.getByRole("tabpanel", { name: "Odpowiedź", exact: true })).toContainText(
     record.answer,
   );
+});
+
+test("proof card travels from the candidate form to the employer decision", async ({ page }) => {
+  await choose(page, "Anna Kowalska");
+  await page.goto("/#/aplikuj/ai-product-manager");
+  await page
+    .getByLabel("Dlaczego pasujesz do tej roli?")
+    .fill("Prowadziłam wdrożenie asystenta do zgłoszeń w zespole operacyjnym.");
+  await page
+    .getByLabel("Twoja część pracy (a co zrobiło AI lub zespół)")
+    .fill("Sama napisałam 12 reguł kierowania zgłoszeń i prompt asystenta.");
+  await page
+    .getByLabel("Kto z tego korzystał i jak sprawdzono efekt")
+    .fill("Korzystało 40 osób przez 6 miesięcy; czas obsługi spadł o 30%.");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button", { name: "Wyślij aplikację", exact: true }).click();
+  await expect(page.getByText("Aplikacja została wysłana.", { exact: false })).toBeVisible();
+
+  await choose(page, "Karolina Wiśniewska");
+  await page.goto("/#/app/kandydaci");
+  await expect(page.getByText("Karta: 2/3 konkretnie", { exact: true })).toBeVisible();
+  await expect(page.getByText("Karta: 0/3 konkretnie", { exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Anna Kowalska", exact: true }).click();
+  const card = page.getByRole("tab", { name: "Karta", exact: true });
+  await expect(card).toHaveAttribute("aria-selected", "true");
+  const panel = page.getByRole("tabpanel", { name: "Karta", exact: true });
+  await expect(panel.locator(".proof-field")).toHaveCount(3);
+  await expect(panel.locator('[data-proof-rating="missing"] dd')).toHaveText("Pole puste.");
+  const questions = panel.getByRole("region", { name: "Zapytaj na pierwszej rozmowie" });
+  await expect(questions.getByRole("listitem")).toHaveCount(2);
+  await expect(questions.getByRole("listitem").first()).toContainText("poszło nie tak");
+  await expect(panel).toContainText("nie ocena AI");
+  await page.getByRole("button", { name: "W przeglądzie", exact: true }).click();
+  await page.getByRole("button", { name: "Zaproszenie na rozmowę", exact: true }).click();
+  await expect(page.locator(".record-stage")).toHaveText("Zaproszenie na rozmowę");
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  }
+  expect(
+    (await new AxeBuilder({ page }).include(".recruiting-record").analyze()).violations,
+  ).toEqual([]);
 });

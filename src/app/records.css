@@ -337,3 +337,95 @@
   border-radius: 10px;
   background: var(--gui-canvas);
 }
+
+/* "Co zrobiłem sam" proof card: ink-contour pills carry the rating with text and icon, not color alone. */
+.proof-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 2px 11px;
+  border: 1px solid var(--gui-text);
+  border-radius: 18px;
+  background: #fff;
+  color: var(--gui-text);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.proof-tag svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.proof-tag[data-proof-rating="vague"] {
+  border-style: dashed;
+}
+.proof-tag[data-proof-rating="missing"] {
+  border-color: var(--pp-line);
+  color: var(--gui-text-muted);
+}
+.proof-list-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.proof-fields {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+.proof-field {
+  padding: 18px 0;
+  border-top: 1px solid var(--pp-line);
+}
+.proof-field:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+.proof-field dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.proof-field dd {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.proof-field[data-proof-rating="missing"] dd {
+  color: var(--gui-text-muted);
+}
+.proof-questions {
+  margin-top: 30px;
+  padding-top: 30px;
+  border-top: 1px solid var(--pp-line);
+}
+.proof-questions ol {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding-left: 1.4em;
+}
+.proof-questions li::marker {
+  font-weight: 600;
+}
+.record-reading .proof-questions li p:first-child {
+  font-weight: 600;
+}
+.record-reading .proof-disclaimer {
+  margin-top: 24px;
+  font-size: 13px;
+  line-height: 1.6;
+}

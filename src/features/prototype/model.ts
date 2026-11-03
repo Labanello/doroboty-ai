@@ -11,6 +11,10 @@ const id = z
 const shortText = z.string().trim().min(1).max(200);
 const text = z.string().trim().max(12000);
 export const MIN_APPLICATION_ANSWER_LENGTH = 20;
+const proofText = z.string().trim().max(2000);
+/** Optional "Co zrobiłem sam" card: what the candidate did, who used it, what failed. */
+export const proofSchema = z.object({ own: proofText, usage: proofText, fix: proofText });
+export type Proof = z.infer<typeof proofSchema>;
 const companySchema = z.object({
   id,
   slug: id,
@@ -115,6 +119,7 @@ const applicationSchema = z.object({
   answer: text.min(MIN_APPLICATION_ANSWER_LENGTH),
   sourceNotes: text,
   generatedAnswer: text,
+  proof: proofSchema.optional(),
   score: z.number().int().min(0).max(100),
   summary: text,
   stage: z.enum(stages),
@@ -129,6 +134,7 @@ const draftSchema = z.object({
   notes: text,
   generated: text,
   answer: text,
+  proof: proofSchema.optional(),
 });
 export const stateSchema = z
   .object({
@@ -201,13 +207,21 @@ export type Action =
   | { type: "select_person"; id: string | null }
   | { type: "profile"; value: z.infer<typeof profileSchema> }
   | { type: "toggle_saved"; jobId: string }
-  | { type: "draft"; jobId: string; notes: string; generated: string; answer: string }
+  | {
+      type: "draft";
+      jobId: string;
+      notes: string;
+      generated: string;
+      answer: string;
+      proof?: Proof;
+    }
   | {
       type: "submit";
       jobId: string;
       notes: string;
       generated: string;
       answer: string;
+      proof?: Proof;
       consent: boolean;
     }
   | { type: "stage"; applicationId: string; stage: Stage; note: string }
@@ -239,12 +253,20 @@ export function initialState(): State {
       "Pracowałem nad automatyzacją obsługi zgłoszeń. Poprowadziłem badania z użytkownikami i wdrożenie, które skróciło czas odpowiedzi o 25%. Chętnie opowiem o decyzjach i ograniczeniach tego projektu.",
     sourceNotes: "",
     generatedAnswer: "",
+    proof: {
+      own: "Automatyzacja obsługi zgłoszeń z zespołem.",
+      usage: "Rozwiązanie było używane w firmie i bardzo pomogło.",
+      fix: "",
+    },
     score: bob.exampleScore,
     summary: bob.exampleSummary,
     stage: "submitted",
     events: [{ stage: "submitted", at: "2026-11-02T09:00:00.000Z", note: "" }],
   });
   return stateSchema.parse(state);
+}
+export function hasProof(proof: Proof) {
+  return Boolean(proof.own.trim() || proof.usage.trim() || proof.fix.trim());
 }
 export function publishedJobs(state: State): JobWithCompany[] {
   return state.jobs
@@ -288,7 +310,11 @@ export function transition(
     else s.saved.push({ candidateId: p.id, jobId: action.jobId });
   } else if (action.type === "draft") {
     const p = candidate();
-    const draft = draftSchema.parse({ candidateId: p.id, ...action });
+    const draft = draftSchema.parse({
+      candidateId: p.id,
+      ...action,
+      proof: action.proof && hasProof(action.proof) ? action.proof : undefined,
+    });
     s.drafts = s.drafts.filter((x) => !(x.candidateId === p.id && x.jobId === action.jobId));
     s.drafts.push(draft);
   } else if (action.type === "submit") {
@@ -310,6 +336,7 @@ export function transition(
         answer: action.answer,
         sourceNotes: action.notes,
         generatedAnswer: action.generated,
+        proof: action.proof && hasProof(action.proof) ? action.proof : undefined,
         score: p.exampleScore,
         summary: p.exampleSummary,
         stage: "submitted",

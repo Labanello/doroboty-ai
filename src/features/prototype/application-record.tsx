@@ -4,6 +4,7 @@ import { ProcessTimeline } from "@/components/process-timeline";
 import { RecordSheet } from "@/components/record-sheet";
 import { CvAttachment } from "./cv-attachment";
 import { MatchScore } from "./match-score";
+import { ProofCard } from "./proof-card";
 import { stageLabels, type Application, type Stage } from "./model";
 
 type RecordEvent = { stage: Stage; at: string; note?: string };
@@ -24,7 +25,15 @@ export function ApplicationRecord({
 }: {
   application: Pick<
     Application,
-    "candidateId" | "candidateName" | "jobTitle" | "stage" | "answer" | "cv" | "score" | "summary"
+    | "candidateId"
+    | "candidateName"
+    | "jobTitle"
+    | "stage"
+    | "answer"
+    | "cv"
+    | "score"
+    | "summary"
+    | "proof"
   >;
   companyName: string;
   audience: "candidate" | "employer";
@@ -37,6 +46,37 @@ export function ApplicationRecord({
   const title = candidate ? application.jobTitle : application.candidateName;
   const context = candidate ? application.candidateName : application.jobTitle;
   const submitted = history[0];
+  // Employers read the "Co zrobiłem sam" card first; candidates keep their answer first.
+  const proofSection = {
+    value: "proof",
+    label: "Karta",
+    content: <ProofCard proof={application.proof} audience={audience} />,
+  };
+  const answerSection = {
+    value: "answer",
+    label: "Odpowiedź",
+    content: (
+      <>
+        <h3>Przesłana aplikacja</h3>
+        <p>{application.answer}</p>
+      </>
+    ),
+  };
+  const cvSection = {
+    value: "cv",
+    label: "CV",
+    content: (
+      <>
+        <h3>CV z momentu aplikowania</h3>
+        <CvAttachment
+          candidateId={application.candidateId}
+          fallbackText={application.cv}
+          layout="row"
+          preview
+        />
+      </>
+    ),
+  };
   return (
     <article className="recruiting-record">
       <header className="recruiting-header">
@@ -67,33 +107,11 @@ export function ApplicationRecord({
       <div className="recruiting-layout">
         <RecordSheet
           label={candidate ? "Twoja wysłana aplikacja" : "Materiały kandydata"}
-          sections={[
-            {
-              value: "answer",
-              label: "Odpowiedź",
-              content: (
-                <>
-                  <h3>Przesłana aplikacja</h3>
-                  <p>{application.answer}</p>
-                </>
-              ),
-            },
-            {
-              value: "cv",
-              label: "CV",
-              content: (
-                <>
-                  <h3>CV z momentu aplikowania</h3>
-                  <CvAttachment
-                    candidateId={application.candidateId}
-                    fallbackText={application.cv}
-                    layout="row"
-                    preview
-                  />
-                </>
-              ),
-            },
-          ]}
+          sections={
+            candidate
+              ? [answerSection, cvSection, ...(application.proof ? [proofSection] : [])]
+              : [proofSection, answerSection, cvSection]
+          }
           footer={footer}
         >
           {children}
