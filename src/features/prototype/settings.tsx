@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { usePrototype } from "./store";
 import { serializeState, MAX_IMPORT_BYTES } from "./storage";
+import { analyticsEnabled } from "@/lib/analytics";
 import { PageTitle } from "./shell";
 
 export function downloadText(name: string, text: string, type = "application/json") {
@@ -125,9 +126,19 @@ export function PrivacyPage() {
         </p>
         <p>
           Profile, aplikacje i ustawienia pozostają w pamięci tej przeglądarki. Aplikacja nie wysyła
-          ich do bazy, dostawcy AI ani systemu analitycznego. Plik eksportu zawiera cały lokalny
-          scenariusz, w tym notatki.
+          ich do bazy ani dostawcy AI. Plik eksportu zawiera cały lokalny scenariusz, w tym notatki.
         </p>
+        {analyticsEnabled() ? (
+          <p data-analytics-notice>
+            Ta wersja zapisuje anonimowe zdarzenia użycia w narzędziu PostHog (serwery w UE):
+            wejścia na strony oraz kliknięcia linków i przycisków, razem z adresem strony i godziną.
+            Nie zapisuje treści pól formularzy, nagrań ekranu, ciasteczek ani danych z pamięci
+            przeglądarki, a przy włączonym w przeglądarce sygnale „Do Not Track” w ogóle niczego nie
+            wysyła.
+          </p>
+        ) : (
+          <p>Ta wersja nie wysyła żadnych zdarzeń do systemu analitycznego.</p>
+        )}
         <p>
           Możesz usunąć zmiany przyciskiem „Resetuj scenariusz” w ustawieniach lub wyczyścić dane
           witryny w przeglądarce. Hosting może prowadzić własne logi dostępu.

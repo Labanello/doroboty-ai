@@ -42,6 +42,24 @@ Ręczne uruchomienie bez nowego commita: **Actions → Publish to GitHub Pages �
 - strona do 1 GB (nasz `dist/` ma ok. 16 MB);
 - miękki limit ok. 100 GB transferu na miesiąc.
 
+## Analityka PostHog (opcjonalna)
+
+Aplikacja zbiera zdarzenia użycia tylko wtedy, gdy przy budowaniu podany jest klucz projektu PostHoga. Bez klucza nie ładuje biblioteki PostHoga i niczego nie wysyła.
+
+**Co jest zbierane:** wejścia na strony (`$pageview`, z adresem po `#`) i kliknięcia linków oraz przycisków (`$autocapture`, z tekstem elementu, adresem strony i godziną). **Czego nie ma:** treści pól formularzy, nagrań ekranu, ankiet, flag funkcji, ciasteczek i danych w pamięci przeglądarki (każde odświeżenie to nowa anonimowa wizyta), profili osób. Sygnał „Do Not Track” w przeglądarce wyłącza wysyłanie. Strona „Prywatność” mówi, czy analityka jest włączona.
+
+**Ustawienie w repozytorium:**
+
+1. W PostHogu (region UE, `eu.posthog.com`) utwórz osobny projekt dla tej aplikacji i skopiuj **Project API key**. Zaczyna się od `phc_` i jest publiczny z założenia, bo trafia do przeglądarki. **Nigdy nie używaj klucza `phx_` (osobisty klucz API).** Aplikacja go odrzuci.
+2. W repozytorium: **Settings → Secrets and variables → Actions → zakładka Variables → New repository variable**:
+   - `VITE_POSTHOG_KEY` = klucz `phc_…`;
+   - opcjonalnie `VITE_POSTHOG_HOST` = `https://eu.i.posthog.com` (to wartość domyślna; dla regionu USA `https://us.i.posthog.com`).
+3. Uruchom ponownie publikację: **Actions → Publish to GitHub Pages → Run workflow** (gałąź `main`).
+
+**Sprawdzenie:** otwórz adres strony, kliknij przycisk, a w PostHogu wejdź w **Activity → Live**. Powinny pojawić się `Pageview` i `Autocapture`. Blokery reklam i skrypty prywatności mogą blokować wysyłkę. Wtedy zdarzeń po prostu nie będzie.
+
+**Wyłączenie:** usuń zmienną `VITE_POSTHOG_KEY` i opublikuj ponownie.
+
 ## Kontrola po publikacji (ok. 5 minut)
 
 Sprawdź w oknie prywatnym przeglądarki, na komputerze i na telefonie:

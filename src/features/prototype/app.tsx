@@ -1,4 +1,6 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router";
+import { useEffect } from "react";
+import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router";
+import { trackPageview } from "@/lib/analytics";
 import { PrototypeProvider } from "./store";
 import { Shell, NotFound } from "./shell";
 import HomePage from "./home";
@@ -17,6 +19,14 @@ import {
 import { EmployerJobs, EmployerJobEditor, CompanyEditor } from "./employer";
 import { SettingsPage, PrivacyPage } from "./settings";
 import { CasePage } from "./case";
+/** Optional analytics: one page view per route change (a no-op unless a PostHog key is built in). */
+function PageviewTracker() {
+  const { pathname, search } = useLocation();
+  useEffect(() => {
+    trackPageview();
+  }, [pathname, search]);
+  return null;
+}
 function AppRoutes() {
   return (
     <Routes>
@@ -151,6 +161,7 @@ export function App() {
   return (
     <PrototypeProvider>
       <HashRouter>
+        <PageviewTracker />
         <AppRoutes />
       </HashRouter>
     </PrototypeProvider>
