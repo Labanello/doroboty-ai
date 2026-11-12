@@ -80,10 +80,12 @@ Sprawdź w oknie prywatnym przeglądarki, na komputerze i na telefonie:
   W zgłoszeniu: co robiłeś, czego oczekiwałeś, co się stało, przeglądarka i telefon albo komputer. **Bez prawdziwych danych osobowych.**
 
 - **Komunikaty w aplikacji:** aplikacja sama pokazuje błąd zapisu w przeglądarce, z instrukcją pobrania danych.
+- **Alert, gdy strona przestanie działać:** workflow „Check live site” (`.github/workflows/uptime.yml`) co 6 godzin otwiera stronę i sprawdza, czy odpowiada kodem 200 i ma tytuł aplikacji. Przy błędzie przebieg kończy się czerwonym krzyżykiem, a GitHub wysyła e-mail do właściciela (ustawienia powiadomień: Settings → Notifications → Actions, „Send notifications for failed workflows only”). Uwaga: GitHub wyłącza zaplanowane workflowy po 60 dniach bez aktywności w repozytorium; wtedy włącz je ponownie w zakładce Actions.
+- **Test alertu:** Actions → Check live site → Run workflow, w polu adresu wpisz zły adres (np. `https://labanello.github.io/doroboty-ai/nie-ma-takiej-strony`). Przebieg ma zrobić się czerwony i przyjść e-mail.
 - **Przy diagnozie właściciel sprawdza:**
   - przebieg w zakładce **Actions** (czy wdrożenie się udało);
   - konsolę przeglądarki na komputerze i telefonie.
-- **Świadoma decyzja dla prototypu kursowego:** aplikacja nie wysyła błędów do żadnej usługi, więc problem widzimy dopiero po zgłoszeniu.
+- **Świadoma decyzja dla prototypu kursowego:** aplikacja nie wysyła błędów z przeglądarek do żadnej usługi, więc o błędach w samej aplikacji dowiadujemy się dopiero po zgłoszeniu. Alert pokazuje tylko, że strona w ogóle przestała odpowiadać.
 
 ## Gdy coś nie działa
 

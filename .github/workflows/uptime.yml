@@ -1,0 +1,25 @@
+name: Check live site
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Address to check (use a wrong path to test the alert)"
+        default: "https://labanello.github.io/doroboty-ai/"
+permissions:
+  contents: read
+jobs:
+  check:
+    name: Open the published page
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Page answers with 200 and the app title
+        env:
+          SITE_URL: ${{ inputs.url || 'https://labanello.github.io/doroboty-ai/' }}
+        run: |
+          code=$(curl -sS -L --max-time 30 -o page.html -w '%{http_code}' "$SITE_URL")
+          echo "HTTP $code for $SITE_URL"
+          test "$code" = "200"
+          grep -q "DoRoboty.ai" page.html
