@@ -24,14 +24,18 @@ Aplikacja to statyczne pliki z `dist/`:
 
 ## Publikacja
 
-Strona jest budowana przez GitHub Actions, bo Pages bez własnego builda obsługuje tylko gotowe pliki albo Jekyll. Szczegóły ustawienia zrobimy w queście o wdrożeniu:
+Strona jest budowana i publikowana przez GitHub Actions (workflow `.github/workflows/pages.yml`). Ustawienie **Settings → Pages → Build and deployment → Source: GitHub Actions** jest włączone od 2026-11-12.
 
-1. W repozytorium: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. Dodaj workflow, który:
-   - robi `npm ci` i `npm run build`;
-   - publikuje `dist/` akcjami `actions/upload-pages-artifact` i `actions/deploy-pages`;
-   - startuje z zatwierdzonej gałęzi albo tagu.
-3. Poczekaj na zielony przebieg w zakładce **Actions**. Wdrożenie trwające dłużej niż 10 minut GitHub przerywa.
+**Pierwsze wdrożenie:** 2026-11-12, commit `761a4ff` na `main`. Workflow zielony, adres odpowiada przez HTTPS.
+
+Jak publikować kolejne wersje:
+
+1. Zatwierdzoną zmianę scal do `main` i wypchnij: `git push origin main`.
+2. Workflow sam robi `npm ci` i `npm run build`, a potem publikuje `dist/` akcjami `actions/upload-pages-artifact` i `actions/deploy-pages`. Publikacja z innej gałęzi niż `main` jest zablokowana przez ustawienia środowiska `github-pages`.
+3. Poczekaj na zielony przebieg „Publish to GitHub Pages” w zakładce **Actions** (zwykle 1–3 minuty). Wdrożenie trwające dłużej niż 10 minut GitHub przerywa.
+4. Wykonaj „Kontrolę po publikacji”.
+
+Ręczne uruchomienie bez nowego commita: **Actions → Publish to GitHub Pages → Run workflow** (na gałęzi `main`).
 
 **Limity GitHub Pages** (dokumentacja GitHuba, sprawdzone 2026-11-11):
 
